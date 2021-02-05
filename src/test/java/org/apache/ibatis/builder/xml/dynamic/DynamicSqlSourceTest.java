@@ -370,6 +370,7 @@ class DynamicSqlSourceTest extends BaseDataTest {
                 + " #{u:VARCHAR,typeHandler=org.apache.ibatis.type.StringTypeHandler}")), "uuuu", "uu", "u", "(", ")", ","));
     BoundSql boundSql = source.getBoundSql(param);
     assertEquals(4, boundSql.getParameterMappings().size());
+
     assertEquals("uuu.u", boundSql.getParameterMappings().get(0).getProperty());
     assertEquals("__frch_u_0.id", boundSql.getParameterMappings().get(1).getProperty());
     assertEquals("__frch_u_0", boundSql.getParameterMappings().get(2).getProperty());

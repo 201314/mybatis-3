@@ -1,35 +1,29 @@
 /**
- *    Copyright 2009-2020 the original author or authors.
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Copyright 2009-2020 the original author or authors.
+ * <p>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.ibatis.reflection;
-
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.binding.MapperMethod.ParamMap;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.*;
 
 public class ParamNameResolver {
 
@@ -77,8 +71,10 @@ public class ParamNameResolver {
       if (name == null) {
         // @Param was not specified.
         if (useActualParamName) {
+          // 实际不会取到真实的名称，要在maven编译时配置才会是真实名称，否则是arg0,arg1…
           name = getActualParamName(method, paramIndex);
         }
+        // 如果获取不到实际的方法入参名称，使用序号代替名称
         if (name == null) {
           // use the parameter index as the name ("0", "1", ...)
           // gcode issue #71
@@ -90,6 +86,11 @@ public class ParamNameResolver {
     names = Collections.unmodifiableSortedMap(map);
   }
 
+  /**
+   * 获取方法参数的实际名称
+   * <p>
+   * https://blog.csdn.net/aitangyong/article/details/54376991
+   */
   private String getActualParamName(Method method, int paramIndex) {
     return ParamNameUtil.getParamNames(method).get(paramIndex);
   }
@@ -115,8 +116,7 @@ public class ParamNameResolver {
    * ...).
    * </p>
    *
-   * @param args
-   *          the args
+   * @param args the args 入参参数值
    * @return the named params
    */
   public Object getNamedParams(Object[] args) {
@@ -125,13 +125,16 @@ public class ParamNameResolver {
       return null;
     } else if (!hasParamAnnotation && paramCount == 1) {
       Object value = args[names.firstKey()];
+      // 只有一个参数时且没有使用@Param注解时，将Collection或Array包装成Map
       return wrapToMapIfCollection(value, useActualParamName ? names.get(0) : null);
     } else {
+      // 使用了@Param 或者 是2个或2个以上参数时
       final Map<String, Object> param = new ParamMap<>();
       int i = 0;
       for (Map.Entry<Integer, String> entry : names.entrySet()) {
         param.put(entry.getValue(), args[entry.getKey()]);
         // add generic param names (param1, param2, ...)
+        // 这意味着，你可以在XML中直接使用 param1,param2, ...代表 Mapper方法里的入参
         final String genericParamName = GENERIC_NAME_PREFIX + (i + 1);
         // ensure not to overwrite parameter named with @Param
         if (!names.containsValue(genericParamName)) {
@@ -146,7 +149,7 @@ public class ParamNameResolver {
   /**
    * Wrap to a {@link ParamMap} if object is {@link Collection} or array.
    *
-   * @param object a parameter object
+   * @param object          a parameter object
    * @param actualParamName an actual parameter name
    *                        (If specify a name, set an object to {@link ParamMap} with specified name)
    * @return a {@link ParamMap}
